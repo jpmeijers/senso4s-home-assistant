@@ -224,7 +224,6 @@ class Senso4sBluetoothDeviceData:
         if self._client is None:
             return None
 
-        self.logger.debug(service_info)
         self.logger.debug(ble_device)
         self.logger.debug(self._device)
 
@@ -247,6 +246,20 @@ class Senso4sBluetoothDeviceData:
             self._device.sensors["status"] = error_msg
             return self._device
 
+        # 2. Read battery level from advertising data
+        battery_percentage = adv_data[4]
+        self._device.sensors["battery"] = battery_percentage
+
+        # 3a. Check status 1
+        self._device.sensors["status2"] = "OK"
+        if adv_data[1] == 0xFE:
+            self._device.sensors["status2"] = "BATTERY_EMPTY"
+        if adv_data[1] == 0xFC:
+            self._device.sensors["status2"] = "ERROR_STARTING_MEASURE"
+        if adv_data[1] == 0xFF:
+            self._device.sensors["status2"] = "UNUSED"
+
+        # 3b. Check status 2
         self._device.sensors["status1"] = "OK"
         if adv_data[0] & 0b11110000 == 0b10000000:
             self._device.model = "Basic"
@@ -254,50 +267,39 @@ class Senso4sBluetoothDeviceData:
             self._device.model = "Pro"
             movement = adv_data[0] & 0b01000000
             if movement:
-                error_msg = ble_device.address + ": Can't measure due to movement"
-                self.logger.error(error_msg)
-                self._device.sensors["status1"] = error_msg
-                return self._device
+                self._device.sensors["status1"] = "MOVEMENT"
 
             inclination = adv_data[0] & 0b00100000
             if inclination:
-                error_msg = ble_device.address + ": Can't measure due to inclination"
-                self.logger.error(error_msg)
-                self._device.sensors["status1"] = error_msg
-                return self._device
+                self._device.sensors["status1"] = "INCLINATION"
 
             temperature_status = adv_data[0] & 0b00010000
             if temperature_status:
-                error_msg = ble_device.address + ": Can't measure due to temperature"
-                self.logger.error(error_msg)
-                self._device.sensors["status1"] = error_msg
-                return self._device
+                self._device.sensors["status1"] = "TEMPERATURE"
 
-        self._device.sensors["status2"] = "OK"
-        if adv_data[1] == 0xFE:
-            status = "BATTERY_EMPTY"
-            self._device.sensors["status2"] = status
-            return self._device
-        if adv_data[1] == 0xFC:
-            status = "ERROR_STARTING_MEASURE"
-            self._device.sensors["status2"] = status
-            return self._device
-        if adv_data[1] == 0xFF:
-            status = "UNUSED"
-            self._device.sensors["status2"] = status
+        # 3c. If statuses are not OK, stop reading further
+        if (
+            self._device.sensors["status1"] != "OK"
+            or self._device.sensors["status2"] != "OK"
+        ):
+            self.logger.debug("Status not OK")
+            self.logger.debug(self._device.sensors["status1"])
+            self.logger.debug(self._device.sensors["status2"])
             return self._device
 
+        # 4. Read Mass and Prediction from advertising data
         mass_percentage = adv_data[1]
         self._device.sensors["mass_percentage"] = mass_percentage
 
         prediction_minutes = ((adv_data[3] << 8) + adv_data[2]) * 15
         self._device.sensors["prediction"] = prediction_minutes
-        battery_percentage = adv_data[4]
-        self._device.sensors["battery"] = battery_percentage
 
+        # 5. Establish Bluetooth connection with Senso4s PLUS/BASIC device
         try:
             status = await self._read_mass()
             if status:
+                # Read any data from relevant characteristics (e.g. Empty gas cylinder weight, Total gas
+                # capacity, History, Setup datetime)
                 tasks = [
                     self._read_mass(),
                     self._read_parameters(),
