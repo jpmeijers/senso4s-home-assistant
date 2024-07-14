@@ -228,8 +228,13 @@ class Senso4sBluetoothDeviceData:
         self.logger.debug(ble_device)
         self.logger.debug(self._device)
 
-        # self._device.name = service_info.name
+        self.logger.debug("Service info")
+        self.logger.debug(service_info)
+        if service_info.name is not None:
+            self._device.name = service_info.name
+
         self._device.identifier = ble_device.address.replace(":", "").lower()
+        self._device.address = ble_device.address
 
         adv_data = service_info.manufacturer_data[SENSO4S_MANUFACTURER]
         self.logger.debug("Adv data: %s", binascii.hexlify(adv_data))

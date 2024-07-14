@@ -99,7 +99,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="unknown")
 
         # name = get_name(device)
-        name = device.address
+        name = device.friendly_name()
         self.context["title_placeholders"] = {"name": name}
         self._discovered_device = Discovery(name, discovery_info, device)
 

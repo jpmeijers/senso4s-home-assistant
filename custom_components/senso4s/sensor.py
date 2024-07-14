@@ -54,6 +54,8 @@ SENSOR_DESCRIPTIONS: dict[str, SensorEntityDescription] = {
         name="Predicted time left",
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.MINUTES,
+        suggested_unit_of_measurement=UnitOfTime.DAYS,
+        # native_unit_of_measurement=UnitOfTime.DAYS,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:calendar-clock",
     ),
