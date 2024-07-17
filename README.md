@@ -1,12 +1,12 @@
 # Senso4s Home Assistant integration
 
-## Installation
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?category=Integration&repository=https%3A%2F%2Fgithub.com%2Fjpmeijers%2Fsenso4s-home-assistant&owner=JP+Meijers)
+
+## Manual Installation
 
 * Clone this repository
 * Copy the directory `custom_components/senso4s` to the `custom_components` directory of your Home Assistant installation
 * Restart Home Assistant
-
-TODO: When this repository becomes public we can simplify the installation by using HACS.
 
 ## Adding the device to Home Assistant
 
