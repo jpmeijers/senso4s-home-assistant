@@ -44,4 +44,8 @@ After adding it to HACS, you can click Download on the Senso4s repository. After
 
 ![device-summary](media/device-summary.png)
 
+![prediction](media/time-left.png)
+
 ![gas-history](media/gas-history.png)
+
+![gas-history-long](media/gas-history-long.png)
