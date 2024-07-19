@@ -137,7 +137,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
             if adv_data[0] & 0b11110000 == 0b10000000:
                 model = "Basic"
             if adv_data[0] & 0b10001111 == 0b00000011:
-                model = "Pro"
+                model = "Plus"
             name = f"Senso4s {model} ({address})"
             self.context["title_placeholders"] = {
                 "name": name,
@@ -166,7 +166,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
             if adv_data[0] & 0b11110000 == 0b10000000:
                 model = "Basic"
             if adv_data[0] & 0b10001111 == 0b00000011:
-                model = "Pro"
+                model = "Plus"
             name = f"Senso4s {model} ({address})"
             self._discovered_devices[address] = Discovery(name, discovery_info, None)
 

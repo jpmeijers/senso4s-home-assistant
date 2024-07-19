@@ -1,4 +1,4 @@
-"""Parser for Senso4s Basic and Pro BLE advertisements."""
+"""Parser for Senso4s Basic and Plus BLE advertisements."""
 
 from __future__ import annotations
 
@@ -263,8 +263,8 @@ class Senso4sBluetoothDeviceData:
         self._device.sensors["status1"] = "OK"
         if adv_data[0] & 0b11110000 == 0b10000000:
             self._device.model = "Basic"
-        if adv_data[0] & 0b10001111 == 0b00000011:
-            self._device.model = "Pro"
+        elif adv_data[0] & 0b10001111 == 0b00000011:
+            self._device.model = "Plus"
             movement = adv_data[0] & 0b01000000
             if movement:
                 self._device.sensors["status1"] = "MOVEMENT"
@@ -276,6 +276,8 @@ class Senso4sBluetoothDeviceData:
             temperature_status = adv_data[0] & 0b00010000
             if temperature_status:
                 self._device.sensors["status1"] = "TEMPERATURE"
+        else:
+            self.logger.error("Device not supported")
 
         # 3c. If statuses are not OK, stop reading further
         if (
