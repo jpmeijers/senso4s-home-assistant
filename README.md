@@ -1,6 +1,6 @@
 # Senso4s Home Assistant integration
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=https%3A%2F%2Fgithub.com%2Fjpmeijers&repository=senso4s-home-assistant&category=integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jpmeijers&repository=senso4s-home-assistant&category=integration)
 
 ## Manual Installation
 
