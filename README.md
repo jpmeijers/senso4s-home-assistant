@@ -1,6 +1,14 @@
 # Senso4s Home Assistant integration
 
+## Quick Install using HACS
+
+You must have HACS installed: https://hacs.xyz/docs/configuration/basic/
+
+Click the button below to add the Senso4s integration to your Home Assistant.
+
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jpmeijers&repository=senso4s-home-assistant&category=integration)
+
+After adding it to HACS, you can click Download on the Senso4s repository. After this you will be requested to restart Home Assistant.
 
 ## Manual Installation
 
