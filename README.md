@@ -1,5 +1,10 @@
 # Senso4s Home Assistant integration
 
+This integration adds support for the [Senso4s PLUS](https://www.senso4s.com/product/senso4s-plus/) and [Senso4s BASIC](https://www.senso4s.com/product/senso4s-basic/) smart gas level sensors to Home Assistant.
+These sensors use Bluetooth to communicate, so your Home Assistant installation needs to have a [Bluetooth adapter or proxy attached](https://www.home-assistant.io/integrations/bluetooth/).
+Setup is done using the [Senso4s Android App](https://play.google.com/store/apps/details?id=com.companyname.Senso4sProject&hl=en_ZA&pli=1) or [Senso4s iOS App](https://apps.apple.com/us/app/senso4s/id1447741983).
+After setup is done, you can check the remain level of gas in your cylinder via either the app or this Home Assistant integration.
+
 ## Quick Install using HACS
 
 You must have HACS installed: https://hacs.xyz/docs/configuration/basic/
