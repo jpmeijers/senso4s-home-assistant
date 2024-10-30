@@ -43,22 +43,22 @@ def simple_callback(device: BLEDevice, advertisement_data: AdvertisementData):
             if data[0] & 0b11110000 == 0b10000000:
                 model = "BASIC"
             if data[0] & 0b10001111 == 0b00000011:
-                model = "PRO"
+                model = "PLUS"
                 movement = data[0] & 0b01000000
                 inclination = data[0] & 0b00100000
                 temperature_status = data[0] & 0b00010000
                 if movement or inclination or temperature_status:
-                    print("Movement:", movement)
-                    print("Inclination:", inclination)
-                    print("Temperature status:", temperature_status)
+                    print("Motion:", movement)
+                    print("High inclination:", inclination)
+                    print("Low/high temperature:", temperature_status)
                     return
 
             if data[1] == 0xFE:
                 status = "BATTERY_EMPTY"
             elif data[1] == 0xFC:
-                status = "ERROR_STARTING_MEASURE"
+                status = "SETUP_UNSUCCESSFUL"
             elif data[1] == 0xFF:
-                status = "UNUSED"
+                status = "NOT_SET"
             else:
                 status = "OK"
                 mass_percentage = data[1]
