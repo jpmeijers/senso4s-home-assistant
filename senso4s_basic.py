@@ -42,9 +42,9 @@ async def main():
                             if value[0] == 0xFE:
                                 status2 = "BATTERY_EMPTY"
                             elif value[0] == 0xFC:
-                                status2 = "ERROR_STARTING_MEASURE"
+                                status2 = "SETUP_UNSUCCESSFUL"
                             elif value[0] == 0xFF:
-                                status2 = "UNUSED"
+                                status2 = "NOT_SET"
                             else:
                                 status2 = "OK"
                                 mass_percentage = value[0]
@@ -80,9 +80,9 @@ async def main():
 
         print(f"Status2: {status2}")
         print(f"Mass: {mass_percentage}%")
-        print(f"Cylinder capacity: {cylinder_capacity / 100}kg")
-        print(f"Cylinder weight: {cylinder_weight / 100}kg")
-        print(f"Setup time: {setup_time}")
+        print(f"Total gas capacity: {cylinder_capacity / 100}kg")
+        print(f"Empty cylinder weight: {cylinder_weight / 100}kg")
+        print(f"Setup date: {setup_time}")
 
         # The interpretation of the history is different than I think
         if len(notify_data) > 0:
