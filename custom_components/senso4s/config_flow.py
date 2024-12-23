@@ -95,7 +95,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
             device = await self._get_device_data(discovery_info)
         except Senso4sDeviceUpdateError:
             return self.async_abort(reason="cannot_connect")
-        except Exception:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except  # noqa: BLE001
             return self.async_abort(reason="unknown")
 
         # name = get_name(device)
@@ -109,7 +109,9 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Confirm discovery."""
-        _LOGGER.debug("async_step_bluetooth_confirm(%s)", self.context["title_placeholders"])
+        _LOGGER.debug(
+            "async_step_bluetooth_confirm(%s)", self.context["title_placeholders"]
+        )
         if user_input is not None:
             return self.async_create_entry(
                 title=self.context["title_placeholders"]["name"], data={}

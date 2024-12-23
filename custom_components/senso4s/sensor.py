@@ -38,8 +38,7 @@ SENSOR_DESCRIPTIONS = [
         name="Predicted time left",
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.MINUTES,
-        suggested_unit_of_measurement=UnitOfTime.DAYS,
-        # native_unit_of_measurement=UnitOfTime.DAYS,
+        suggested_unit_of_measurement=UnitOfTime.DAYS,  # To render as days on UI
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:calendar-clock",
     ),
@@ -49,15 +48,15 @@ SENSOR_DESCRIPTIONS = [
         device_class=SensorDeviceClass.WEIGHT,
         native_unit_of_measurement=UnitOfMass.KILOGRAMS,
         state_class=SensorStateClass.MEASUREMENT,
-        icon="mdi:gas-cylinder",
+        icon="mdi:propane-tank",
     ),
     SensorEntityDescription(
         key=Senso4sSensor.MASS_PERCENT,
         name="Remaining gas %",
-        # device_class=SensorDeviceClass.WEIGHT,
+        # device_class=SensorDeviceClass.,
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
-        icon="mdi:gas-cylinder",
+        icon="mdi:propane-tank",
     ),
     SensorEntityDescription(
         key=Senso4sSensor.BATTERY,
@@ -66,6 +65,7 @@ SENSOR_DESCRIPTIONS = [
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
+        # Default icon is good
     ),
     SensorEntityDescription(
         key=Senso4sSensor.RSSI,
@@ -74,20 +74,27 @@ SENSOR_DESCRIPTIONS = [
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        # entity_registry_enabled_default=False,
-        icon="mdi:signal-variant",
+        # entity_registry_visible_default=False,  # Hide from UI by default
+        # icon="mdi:signal-variant",
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.WARNINGS,
-        name="Warnings",
-        # device_class=SensorDeviceClass.ENUM,
-        # options=[
-        #     Senso4sSensor.WARNING_NONE,
-        #     Senso4sSensor.WARNING_MOVEMENT,
-        #     Senso4sSensor.WARNING_INCLINATION,
-        #     Senso4sSensor.WARNING_TEMPERATURE,
-        # ],
-        # state_class=SensorStateClass.MEASUREMENT,
+        key=Senso4sSensor.WARNING_MOVEMENT,
+        name="Movement warning",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:alert-circle-outline",
+    ),
+    SensorEntityDescription(
+        key=Senso4sSensor.WARNING_INCLINATION,
+        name="Movement warning",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:alert-circle-outline",
+    ),
+    SensorEntityDescription(
+        key=Senso4sSensor.WARNING_TEMPERATURE,
+        name="Movement warning",
+        state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:alert-circle-outline",
     ),
@@ -112,7 +119,7 @@ SENSOR_DESCRIPTIONS = [
         native_unit_of_measurement=UnitOfMass.KILOGRAMS,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        icon="mdi:gas-cylinder",
+        icon="mdi:propane-tank",
     ),
     SensorEntityDescription(
         key=Senso4sSensor.CYLINDER_WEIGHT,
@@ -121,13 +128,12 @@ SENSOR_DESCRIPTIONS = [
         native_unit_of_measurement=UnitOfMass.KILOGRAMS,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        icon="mdi:gas-cylinder",
+        icon="mdi:propane-tank-outline",
     ),
     SensorEntityDescription(
         key=Senso4sSensor.SETUP_TIME,
         name="Setup Time",
         device_class=SensorDeviceClass.TIMESTAMP,
-        # native_unit_of_measurement=UnitOfTime.SECONDS,
         # state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:calendar-clock",
@@ -140,19 +146,20 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
+    """Set up the Senso4s BLE sensors."""
+
     _LOGGER.debug("async_setup_entry()")
 
-    """Set up the Senso4s BLE sensors."""
     coordinator: DataUpdateCoordinator[Senso4sDevice] = hass.data[DOMAIN][
         entry.entry_id
     ]
 
     entities = []
     _LOGGER.debug("Got sensors: %s", coordinator.data)
-    """ Add sensors entities to the coordinator. """
-    for sensor_type in coordinator.data.sensors:
-        _LOGGER.debug(f"Adding entity {sensor_type}")
 
+    # Add entities for sensors received by the coordinator
+    for sensor_type in coordinator.data.sensors:
+        # Find description for this sensor type (data key)
         description = None
         for i in SENSOR_DESCRIPTIONS:
             if i.key == sensor_type:
@@ -169,6 +176,7 @@ async def async_setup_entry(
             coordinator.data,
             description,
         )
+        _LOGGER.debug("Adding entity for %s", sensor_type)
         entities.append(entity)
 
     async_add_entities(entities)
@@ -187,13 +195,11 @@ class Senso4sSensorEntity(
         senso4s_device: Senso4sDevice,
         entity_description: SensorEntityDescription,
     ) -> None:
-        _LOGGER.debug(f"__init__({entity_description.key})")
-
         """Populate the Senso4s entity with relevant device data."""
+        _LOGGER.debug("__init__(%s)", entity_description.key)
+
         super().__init__(coordinator)
         self.entity_description = entity_description
-
-        name = senso4s_device.friendly_name()
 
         self.entity_id = (
             f"sensor.{senso4s_device.address.replace("_","")}_{entity_description.key}"
@@ -202,6 +208,7 @@ class Senso4sSensorEntity(
             f"{senso4s_device.address.replace("_","")}_{entity_description.key}"
         )
 
+        friendly_name = senso4s_device.friendly_name()
         self._attr_device_info = DeviceInfo(
             connections={
                 (
@@ -209,7 +216,7 @@ class Senso4sSensorEntity(
                     senso4s_device.address,
                 )
             },
-            name=name,
+            name=friendly_name,
             manufacturer=senso4s_device.manufacturer,
             hw_version=senso4s_device.hw_version,
             sw_version=senso4s_device.sw_version,
@@ -220,7 +227,9 @@ class Senso4sSensorEntity(
     def available(self) -> bool:
         """Check if device and sensor is available in data."""
         _LOGGER.debug(
-            f"available({self.entity_description.key}) => {self.entity_description.key in self.coordinator.data.sensors}"
+            "available(%s) => %s",
+            self.entity_description.key,
+            self.entity_description.key in self.coordinator.data.sensors,
         )
         return super().available and (
             self.entity_description.key in self.coordinator.data.sensors
@@ -230,6 +239,8 @@ class Senso4sSensorEntity(
     def native_value(self) -> StateType:
         """Return the value reported by the sensor."""
         _LOGGER.debug(
-            f"native_value({self.entity_description.key}) => {self.coordinator.data.sensors[self.entity_description.key]}"
+            "native_value(%s) => %s",
+            self.entity_description.key,
+            self.coordinator.data.sensors[self.entity_description.key],
         )
         return self.coordinator.data.sensors[self.entity_description.key]

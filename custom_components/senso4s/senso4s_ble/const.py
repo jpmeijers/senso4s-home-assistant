@@ -1,5 +1,5 @@
-# Manufacturer ID for checking if it's a Senso4s, equivalent to decimal 71.
-SENSO4S_MANUFACTURER = 0x09CC
+# Manufacturer ID for checking if it's a Senso4s, equivalent to decimal 2508.
+SENSO4S_MANUFACTURER = 0x09CC #2508
 
 # Senso4s service and characterisitcs
 BASIC_SERVICE = "00007081-a20b-4d4d-a4de-7f071dbbc1d8"
