@@ -19,6 +19,6 @@
   "loggers": [
     "senso4s_ble"
   ],
-  "requirements": [],
+  "requirements": ["sensor-state-data"],
   "integration_type": "device"
 }

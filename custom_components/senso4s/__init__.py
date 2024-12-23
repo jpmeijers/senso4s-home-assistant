@@ -1,4 +1,5 @@
 """The Senso4s integration."""
+
 from __future__ import annotations
 
 from datetime import timedelta
@@ -30,6 +31,8 @@ last_event_time = time.time()
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Senso4s BLE device from a config entry."""
+    _LOGGER.debug("async_setup_entry()")
+
     hass.data.setdefault(DOMAIN, {})
     address = entry.unique_id
     assert address is not None
@@ -40,7 +43,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     async def _async_update_method():
         """Get data from Senso4s BLE."""
-        _LOGGER.debug("Senso4s update method.")
+        _LOGGER.debug("_async_update_method()")
+
         service_info = async_last_service_info(hass, address, connectable=True)
         ble_device = async_ble_device_from_address(hass, address)
         if not ble_device:
@@ -58,14 +62,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _LOGGER.debug("Polling interval is set to: %s seconds", scan_interval)
 
-    coordinator = hass.data.setdefault(DOMAIN, {})[
-        entry.entry_id
-    ] = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name=DOMAIN,
-        update_method=_async_update_method,
-        update_interval=timedelta(seconds=scan_interval),
+    coordinator = hass.data.setdefault(DOMAIN, {})[entry.entry_id] = (
+        DataUpdateCoordinator(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_method=_async_update_method,
+            update_interval=timedelta(seconds=scan_interval),
+        )
     )
 
     await coordinator.async_config_entry_first_refresh()
@@ -74,15 +78,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     return True
 
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
+    _LOGGER.debug("async_unload_entry()")
+
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
 
+
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle removal of an entry."""
+    _LOGGER.debug("async_remove_entry()")
+
     address = entry.unique_id
     assert address is not None
     ble_device = async_ble_device_from_address(hass, address)

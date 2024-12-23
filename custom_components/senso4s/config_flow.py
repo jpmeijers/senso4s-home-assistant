@@ -35,7 +35,7 @@ class Discovery:
 def get_name(device: Senso4sDevice) -> str:
     """Generate name with model and identifier for device."""
 
-    _LOGGER.debug("Setup Get Name: %s", device.address)
+    _LOGGER.debug("get_name(%s)", device.address)
     return device.friendly_name()
 
 
@@ -50,14 +50,14 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize the config flow."""
-        _LOGGER.debug("Init config flow")
+        _LOGGER.debug("__init__()")
         self._discovered_device: Discovery | None = None
         self._discovered_devices: dict[str, Discovery] = {}
 
     async def _get_device_data(
         self, discovery_info: BluetoothServiceInfo
     ) -> Senso4sDevice:
-        _LOGGER.debug("_get_device_data: %s", discovery_info.address)
+        _LOGGER.debug("_get_device_data(%s)", discovery_info.address)
         ble_device = bluetooth.async_ble_device_from_address(
             self.hass, discovery_info.address
         )
@@ -68,7 +68,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
         senso4s = Senso4sBluetoothDeviceData(_LOGGER)
 
         try:
-            data = await senso4s.update_device(ble_device)
+            data = await senso4s.update_device(ble_device, discovery_info)
         except BleakError as err:
             _LOGGER.error(
                 "Error connecting to and getting data from %s: %s",
@@ -87,7 +87,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
         self, discovery_info: BluetoothServiceInfo
     ) -> ConfigFlowResult:
         """Handle the bluetooth discovery step."""
-        _LOGGER.debug("async_step_bluetooth: %s", discovery_info.address)
+        _LOGGER.debug("async_step_bluetooth(%s)", discovery_info.address)
         await self.async_set_unique_id(discovery_info.address)
         self._abort_if_unique_id_configured()
 
@@ -109,7 +109,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Confirm discovery."""
-        _LOGGER.debug("async_step_bluetooth_confirm")
+        _LOGGER.debug("async_step_bluetooth_confirm(%s)", self.context["title_placeholders"])
         if user_input is not None:
             return self.async_create_entry(
                 title=self.context["title_placeholders"]["name"], data={}
@@ -125,7 +125,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the user step to pick discovered device."""
-        _LOGGER.debug("async_step_user")
+        _LOGGER.debug("async_step_user(%s)", user_input)
         if user_input is not None:
             address = user_input[CONF_ADDRESS]
             await self.async_set_unique_id(address, raise_on_progress=False)
@@ -168,6 +168,12 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
             if adv_data[0] & 0b10001111 == 0b00000011:
                 model = "Plus"
             name = f"Senso4s {model} ({address})"
+
+            # Add battery to the name during configuration
+            # Read battery level from advertising data
+            # battery_percentage = adv_data[4]
+            # name = name + " (battery "+str(battery_percentage)+"%)"
+
             self._discovered_devices[address] = Discovery(name, discovery_info, None)
 
         if not self._discovered_devices:

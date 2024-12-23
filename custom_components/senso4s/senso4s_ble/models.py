@@ -23,7 +23,5 @@ class Senso4sDevice:
     def friendly_name(self) -> str:
         """Generate a name for the device."""
 
-        # The name is the mac address with dashes rather than colons. No point in including it again.
-        # if self.name != "":
-        #     return f"{self.name} {self.model} ({self.address})"
+        # The self.name is the mac address with dashes rather than colons. No point in including it again.
         return f"{self.manufacturer} {self.model} ({self.address})"
