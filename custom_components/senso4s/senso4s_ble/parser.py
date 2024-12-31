@@ -208,14 +208,31 @@ class Senso4sBluetoothDeviceData:
         return self._device
 
     async def _read_mass(self, client):
-        value = await client.read_gatt_char(MASS_CHARACTERISTIC_UUID_READ)
-        self.logger.debug("Mass char bytes: %s", binascii.hexlify(value))
-        mass_percentage = value[0]
+        mass_percentage = None
+        try:
+            # NOTE: To read this characteristic, one must first enable the NOTIFY property.
+            await client.start_notify(
+                MASS_CHARACTERISTIC_UUID_READ,
+                self.mass_notification_handler,
+            )
+
+            value = await client.read_gatt_char(MASS_CHARACTERISTIC_UUID_READ)
+            self.logger.debug("Mass char bytes: %s", binascii.hexlify(value))
+            mass_percentage = value[0]
+        except BleakError as err:
+            self.logger.debug("Start notify mass exception: %s", err)
+            return
+        finally:
+            await client.stop_notify(MASS_CHARACTERISTIC_UUID_READ)
 
         if mass_percentage > 100:
+            # If any of the values below occur, an error occurred during measurement or during starting a new measuring cycle:
             self.logger.debug("Mass percentage out of range")
             self._device.sensors[Senso4sSensor.MASS_PERCENT] = None
 
+            # 0x[FE] - empty batteries (battery replacement needed),
+            # 0x[FC] - error during starting a new measuring cycle,
+            # 0x[FF] - the device has not been used yet or batteries were replaced.
             if mass_percentage == 0xFE:
                 status = Senso4sSensor.STATUS_BATTERY_EMPTY
                 self.logger.debug(status)
@@ -234,6 +251,7 @@ class Senso4sBluetoothDeviceData:
                 self._device.sensors[Senso4sSensor.STATUS] = status
 
         else:
+            # If value of this byte is between 0x[00] and 0x[64], then this byte represents a mass value in percentage [%].
             self._device.sensors[Senso4sSensor.MASS_PERCENT] = mass_percentage
             self._device.sensors[Senso4sSensor.STATUS] = Senso4sSensor.STATUS_OK
 
@@ -245,6 +263,13 @@ class Senso4sBluetoothDeviceData:
         self._device.sensors[Senso4sSensor.CYLINDER_CAPACITY] = params[1] / 100
 
     async def _read_history(self, client):
+        """Read history.
+
+        NOTE: To read history data, one must first enable NOTIFY property and then WRITE value 0 in uint16
+        format to the characteristic. After that the stream of history data will be available on this
+        characteristic.
+        """
+
         try:
             await client.start_notify(
                 HISTORY_CHARACTERISTIC_UUID_NOTIFYWRITE,
@@ -308,6 +333,10 @@ class Senso4sBluetoothDeviceData:
                 str(e),
             )
         return None
+
+    def mass_notification_handler(self, _: Any, data: bytearray) -> None:
+        """Mass data notifications."""
+        self.logger.debug("Mass notification bytes: %s", binascii.hexlify(data))
 
     def history_notification_handler(self, _: Any, data: bytearray) -> None:
         """Parse historical data notifications."""
