@@ -168,7 +168,7 @@ class Senso4sBluetoothDeviceData:
 
         # 4b. Read Prediction from advertising data
         if adv_data[2] == 0xFF and adv_data[3] == 0xFF:
-            self.logger.debug("Prediction is 0xFFFF")
+            self.logger.debug("Prediction is 0xFFFF - unset")
             self._device.sensors[Senso4sSensor.PREDICTION] = None
         else:
             prediction_minutes = ((adv_data[3] << 8) + adv_data[2]) * 15
@@ -284,7 +284,7 @@ class Senso4sBluetoothDeviceData:
             HISTORY_CHARACTERISTIC_UUID_NOTIFYWRITE, b"\x00\x00"
         )
 
-        # Wait up to 5s for historical data notifications
+        # Wait up to 5s for historical data notifications - todo use a timeout on notify receive
         await asyncio.sleep(5.0)
 
         await client.stop_notify(HISTORY_CHARACTERISTIC_UUID_NOTIFYWRITE)
@@ -305,18 +305,22 @@ class Senso4sBluetoothDeviceData:
         value = await client.read_gatt_char(SETUPTIME_CHARACTERISTIC_UUID_READ)
         self.logger.debug("Setup time char bytes: %s", binascii.hexlify(value))
         time_parts = struct.unpack("<HBBBBB", value)
-        setup_time = datetime.datetime(
-            year=time_parts[0],
-            month=time_parts[1],
-            day=time_parts[2],
-            hour=time_parts[3],
-            minute=time_parts[4],
-            tzinfo=ZoneInfo("localtime"),
-        )
-        # The scale reports the setup time as local time.
-        # Assuming it is the timezone of the app that set it up, and that it aligns with the timezone used by this Home Assistant.
-        # setup_time = setup_time.replace(tzinfo=datetime.Local)
-        self._device.sensors[Senso4sSensor.SETUP_TIME] = setup_time
+        # year might be zero, making datetime throw an error
+        if time_parts[0] == 0:
+            self._device.sensors[Senso4sSensor.SETUP_TIME] = None
+        else:
+            setup_time = datetime.datetime(
+                year=time_parts[0],
+                month=time_parts[1],
+                day=time_parts[2],
+                hour=time_parts[3],
+                minute=time_parts[4],
+                tzinfo=ZoneInfo("localtime"),
+            )
+            # The scale reports the setup time as local time.
+            # Assuming it is the timezone of the app that set it up, and that it aligns with the timezone used by this Home Assistant.
+            # setup_time = setup_time.replace(tzinfo=datetime.Local)
+            self._device.sensors[Senso4sSensor.SETUP_TIME] = setup_time
 
     async def _get_client(self, ble_device: BLEDevice) -> BleakClient:
         """Connect to the BLEDevice."""
