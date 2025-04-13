@@ -90,14 +90,14 @@ SENSOR_DESCRIPTIONS = [
     ),
     SensorEntityDescription(
         key=Senso4sSensor.WARNING_INCLINATION,
-        name="Movement warning",
+        name="Inclination warning",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:alert-circle-outline",
     ),
     SensorEntityDescription(
         key=Senso4sSensor.WARNING_TEMPERATURE,
-        name="Movement warning",
+        name="Temperature warning",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:alert-circle-outline",
