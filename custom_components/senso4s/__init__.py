@@ -65,7 +65,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         if data.error is not None:
             _LOGGER.debug("Updated returned error: {data.error}")
-            raise ConfigEntryNotReady(
+            raise UpdateFailed(
                 f"Updated returned error: {data.error}"
             )
 
