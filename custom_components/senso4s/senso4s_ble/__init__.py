@@ -12,16 +12,18 @@ from sensor_state_data import (
     Units,
 )
 
-from .models import Senso4sDevice
-from .parser import Senso4sBluetoothDeviceData, Senso4sDeviceInfo, Senso4sSensor
+from .models import Senso4sDeviceData
+from .parser import Senso4sBluetoothDevice
+from .const import Senso4sDataFields, Senso4sInfoFields, Senso4sBleConstants
 
 __version__ = "0.1.0"
 
 __all__ = [
-    "Senso4sDevice",
-    "Senso4sSensor",
-    "Senso4sBluetoothDeviceData",
-    "Senso4sDeviceInfo",
+    "Senso4sDeviceData",
+    "Senso4sBluetoothDevice",
+    "Senso4sDataFields",
+    "Senso4sInfoFields",
+    "Senso4sBleConstants",
     "SensorDescription",
     "SensorDeviceInfo",
     "DeviceKey",

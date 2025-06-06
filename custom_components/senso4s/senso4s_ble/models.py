@@ -6,7 +6,7 @@ import dataclasses
 
 
 @dataclasses.dataclass
-class Senso4sDevice:
+class Senso4sDeviceData:
     """Response data with information about the Senso4s device."""
 
     manufacturer: str = "Senso4s"
@@ -19,6 +19,7 @@ class Senso4sDevice:
     sensors: dict[str, str | float | None] = dataclasses.field(
         default_factory=lambda: {}
     )
+    error: str | None = None
 
     def friendly_name(self) -> str:
         """Generate a name for the device."""

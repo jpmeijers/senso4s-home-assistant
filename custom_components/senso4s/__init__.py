@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
 import logging
 import time
+from datetime import timedelta
 
 from bleak import BleakClient
 from bleak_retry_connector import establish_connection
@@ -18,9 +18,8 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
-from .senso4s_ble import Senso4sBluetoothDeviceData
+from .const import UPDATE_INTERVAL_S, DOMAIN
+from .senso4s_ble import Senso4sBluetoothDevice
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
@@ -38,8 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     assert address is not None
 
     _LOGGER.debug("Senso4s device address %s", address)
-    senso4s = Senso4sBluetoothDeviceData(_LOGGER)
-    scan_interval = DEFAULT_SCAN_INTERVAL
+    senso4s_device = Senso4sBluetoothDevice(_LOGGER)
 
     async def _async_update_method():
         """Get data from Senso4s BLE."""
@@ -54,13 +52,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug("Senso4s BLE device is %s", ble_device)
 
         try:
-            data = await senso4s.update_device(ble_device, service_info)
+            # TODO do fast adv updates and slow full updates
+            data = await senso4s_device.update_device_full(ble_device, service_info)
         except Exception as err:
             raise UpdateFailed(f"Unable to fetch data: {err}") from err
 
+        if data is None:
+            _LOGGER.debug("full update returned None")
+            raise UpdateFailed(
+                f"Updated returned None {address}"
+            )
+
+        if data.error is not None:
+            _LOGGER.debug("Updated returned error: {data.error}")
+            raise ConfigEntryNotReady(
+                f"Updated returned error: {data.error}"
+            )
+
         return data
 
-    _LOGGER.debug("Polling interval is set to: %s seconds", scan_interval)
+    _LOGGER.debug("Polling interval is set to: %s seconds", UPDATE_INTERVAL_S)
 
     coordinator = hass.data.setdefault(DOMAIN, {})[entry.entry_id] = (
         DataUpdateCoordinator(
@@ -68,7 +79,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _LOGGER,
             name=DOMAIN,
             update_method=_async_update_method,
-            update_interval=timedelta(seconds=scan_interval),
+            update_interval=timedelta(seconds=UPDATE_INTERVAL_S),
+            always_update=False,
         )
     )
 

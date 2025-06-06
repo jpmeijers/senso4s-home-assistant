@@ -28,13 +28,13 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .const import DOMAIN
-from .senso4s_ble import Senso4sDevice, Senso4sSensor
+from .senso4s_ble import Senso4sDeviceData, Senso4sDataFields
 
 _LOGGER = logging.getLogger(__name__)
 
 SENSOR_DESCRIPTIONS = [
     SensorEntityDescription(
-        key=Senso4sSensor.PREDICTION,
+        key=Senso4sDataFields.PREDICTION,
         name="Predicted time left",
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.MINUTES,
@@ -43,7 +43,7 @@ SENSOR_DESCRIPTIONS = [
         icon="mdi:calendar-clock",
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.MASS_KG,
+        key=Senso4sDataFields.MASS_KG,
         name="Remaining gas",
         device_class=SensorDeviceClass.WEIGHT,
         native_unit_of_measurement=UnitOfMass.KILOGRAMS,
@@ -52,7 +52,7 @@ SENSOR_DESCRIPTIONS = [
         icon="mdi:propane-tank",
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.MASS_PERCENT,
+        key=Senso4sDataFields.MASS_PERCENT,
         name="Remaining gas %",
         # device_class=SensorDeviceClass.,
         native_unit_of_measurement=PERCENTAGE,
@@ -61,7 +61,7 @@ SENSOR_DESCRIPTIONS = [
         icon="mdi:propane-tank",
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.BATTERY,
+        key=Senso4sDataFields.BATTERY,
         name="Battery level",
         device_class=SensorDeviceClass.BATTERY,
         native_unit_of_measurement=PERCENTAGE,
@@ -71,7 +71,7 @@ SENSOR_DESCRIPTIONS = [
         # Default icon is good
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.RSSI,
+        key=Senso4sDataFields.RSSI,
         name="RSSI",
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
@@ -82,42 +82,42 @@ SENSOR_DESCRIPTIONS = [
         # icon="mdi:signal-variant",
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.WARNING_MOVEMENT,
+        key=Senso4sDataFields.WARNING_MOVEMENT,
         name="Movement warning",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:alert-circle-outline",
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.WARNING_INCLINATION,
+        key=Senso4sDataFields.WARNING_INCLINATION,
         name="Inclination warning",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:alert-circle-outline",
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.WARNING_TEMPERATURE,
+        key=Senso4sDataFields.WARNING_TEMPERATURE,
         name="Temperature warning",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:alert-circle-outline",
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.STATUS,
+        key=Senso4sDataFields.STATUS,
         name="Status",
         device_class=SensorDeviceClass.ENUM,
         options=[
-            Senso4sSensor.STATUS_OK,
-            Senso4sSensor.STATUS_BATTERY_EMPTY,
-            Senso4sSensor.STATUS_ERROR_STARTING,
-            Senso4sSensor.STATUS_NOT_CONFIGURED,
+            Senso4sDataFields.STATUS_OK,
+            Senso4sDataFields.STATUS_BATTERY_EMPTY,
+            Senso4sDataFields.STATUS_ERROR_STARTING,
+            Senso4sDataFields.STATUS_NOT_CONFIGURED,
         ],
         # state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:check-circle-outline",
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.CYLINDER_CAPACITY,
+        key=Senso4sDataFields.CYLINDER_CAPACITY,
         name="Cylinder Capacity",
         device_class=SensorDeviceClass.WEIGHT,
         native_unit_of_measurement=UnitOfMass.KILOGRAMS,
@@ -127,7 +127,7 @@ SENSOR_DESCRIPTIONS = [
         icon="mdi:propane-tank",
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.CYLINDER_WEIGHT,
+        key=Senso4sDataFields.CYLINDER_WEIGHT,
         name="Cylinder Weight",
         device_class=SensorDeviceClass.WEIGHT,
         native_unit_of_measurement=UnitOfMass.KILOGRAMS,
@@ -137,8 +137,16 @@ SENSOR_DESCRIPTIONS = [
         icon="mdi:propane-tank-outline",
     ),
     SensorEntityDescription(
-        key=Senso4sSensor.SETUP_TIME,
+        key=Senso4sDataFields.SETUP_TIME,
         name="Setup Time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        # state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:calendar-clock",
+    ),
+    SensorEntityDescription(
+        key=Senso4sDataFields.LAST_MEASUREMENT,
+        name="Last Measurement",
         device_class=SensorDeviceClass.TIMESTAMP,
         # state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -156,7 +164,7 @@ async def async_setup_entry(
 
     _LOGGER.debug("async_setup_entry()")
 
-    coordinator: DataUpdateCoordinator[Senso4sDevice] = hass.data[DOMAIN][
+    coordinator: DataUpdateCoordinator[Senso4sDeviceData] = hass.data[DOMAIN][
         entry.entry_id
     ]
 
@@ -189,7 +197,7 @@ async def async_setup_entry(
 
 
 class Senso4sSensorEntity(
-    CoordinatorEntity[DataUpdateCoordinator[Senso4sDevice]], SensorEntity
+    CoordinatorEntity[DataUpdateCoordinator[Senso4sDeviceData]], SensorEntity
 ):
     """Senso4s BLE sensors for the device."""
 
@@ -197,8 +205,8 @@ class Senso4sSensorEntity(
 
     def __init__(
         self,
-        coordinator: DataUpdateCoordinator[Senso4sDevice],
-        senso4s_device: Senso4sDevice,
+        coordinator: DataUpdateCoordinator[Senso4sDeviceData],
+        senso4s_device: Senso4sDeviceData,
         entity_description: SensorEntityDescription,
     ) -> None:
         """Populate the Senso4s entity with relevant device data."""

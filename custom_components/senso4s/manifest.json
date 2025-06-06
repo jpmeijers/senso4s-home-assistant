@@ -1,14 +1,20 @@
 {
   "domain": "senso4s",
   "name": "Senso4s",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "codeowners": [
     "@jpmeijers"
   ],
   "bluetooth": [
     {
       "connectable": true,
-      "manufacturer_id": 2508
+      "manufacturer_id": 89,
+      "service_uuid": "00007081-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "connectable": true,
+      "manufacturer_id": 2508,
+      "service_uuid": "00007081-0000-1000-8000-00805f9b34fb"
     }
   ],
   "config_flow": true,
