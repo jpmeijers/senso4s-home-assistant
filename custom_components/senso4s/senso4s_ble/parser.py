@@ -14,6 +14,7 @@ from bleak import BleakClient, BleakError, BLEDevice
 import bleak_retry_connector
 from habluetooth import BluetoothServiceInfoBleak
 
+import homeassistant.util.dt
 from .const import (
     Senso4sDataFields, Senso4sInfoFields, Senso4sBleConstants,
 )
@@ -307,7 +308,7 @@ class Senso4sBluetoothDevice:
                 day=time_parts[2],
                 hour=time_parts[3],
                 minute=time_parts[4],
-                tzinfo=ZoneInfo("localtime"),
+                tzinfo=homeassistant.util.dt.get_default_time_zone(),
             )
             # The scale reports the setup time as local time.
             # Assuming it is the timezone of the app that set it up, and that it aligns with the timezone used by this Home Assistant.
