@@ -16,7 +16,7 @@ from homeassistant.components.bluetooth import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ServiceNotFound
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from .const import UPDATE_INTERVAL_S, DOMAIN
 from .senso4s_ble import Senso4sBluetoothDevice
@@ -45,9 +45,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         service_info = async_last_service_info(hass, address, connectable=True)
         ble_device = async_ble_device_from_address(hass, address)
-        if not ble_device:
-            raise ConfigEntryNotReady(
-                f"Could not find Senso4s device with address {address}"
+        if ble_device is None:
+            raise ServiceNotFound(
+                DOMAIN,
+                f"{address}"
             )
         _LOGGER.debug("Senso4s BLE device is %s", ble_device)
 

@@ -23,7 +23,7 @@ async def scan_for_device():
         # Check if the desired device is in the list
         for device, adv in devices.values():
             print("ADV:", adv.manufacturer_data)
-            if Senso4sBleConstants.SENSO4S_MANUFACTURER in adv.manufacturer_data:
+            if Senso4sBleConstants.SENSO4S_MANUFACTURER in adv.manufacturer_data or Senso4sBleConstants.NORDIC_MANUFACTURER in adv.manufacturer_data:
                 return device, adv
 
 

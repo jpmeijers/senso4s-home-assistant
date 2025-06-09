@@ -111,6 +111,7 @@ SENSOR_DESCRIPTIONS = [
             Senso4sDataFields.STATUS_BATTERY_EMPTY,
             Senso4sDataFields.STATUS_ERROR_STARTING,
             Senso4sDataFields.STATUS_NOT_CONFIGURED,
+            Senso4sDataFields.STATUS_UNKNOWN,
         ],
         # state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -156,9 +157,9 @@ SENSOR_DESCRIPTIONS = [
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Senso4s BLE sensors."""
 
@@ -204,10 +205,10 @@ class Senso4sSensorEntity(
     _attr_has_entity_name = True
 
     def __init__(
-        self,
-        coordinator: DataUpdateCoordinator[Senso4sDeviceData],
-        senso4s_device: Senso4sDeviceData,
-        entity_description: SensorEntityDescription,
+            self,
+            coordinator: DataUpdateCoordinator[Senso4sDeviceData],
+            senso4s_device: Senso4sDeviceData,
+            entity_description: SensorEntityDescription,
     ) -> None:
         """Populate the Senso4s entity with relevant device data."""
         _LOGGER.debug("__init__(%s)", entity_description.key)
@@ -216,10 +217,10 @@ class Senso4sSensorEntity(
         self.entity_description = entity_description
 
         self.entity_id = (
-            f"sensor.{senso4s_device.address.replace("_","")}_{entity_description.key}"
+            f"sensor.{senso4s_device.address.replace("_", "")}_{entity_description.key}"
         )
         self._attr_unique_id = (
-            f"{senso4s_device.address.replace("_","")}_{entity_description.key}"
+            f"{senso4s_device.address.replace("_", "")}_{entity_description.key}"
         )
 
         friendly_name = senso4s_device.friendly_name()
@@ -246,7 +247,7 @@ class Senso4sSensorEntity(
             self.entity_description.key in self.coordinator.data.sensors,
         )
         return super().available and (
-            self.entity_description.key in self.coordinator.data.sensors
+                self.entity_description.key in self.coordinator.data.sensors
         )
 
     @property

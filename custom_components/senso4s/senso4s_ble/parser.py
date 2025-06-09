@@ -52,7 +52,7 @@ class Senso4sBluetoothDevice:
         self.logger.debug("Service info: %s", service_info)
 
         # If the device advertises a name, use it
-        if service_info.name is not None:
+        if hasattr(service_info, 'name') and service_info.name is not None:
             self._device.name = service_info.name
 
         self._device.identifier = ble_device.address.replace(":", "").lower()
@@ -106,7 +106,10 @@ class Senso4sBluetoothDevice:
             self.logger.debug("Model BASIC")
             self._device.model = Senso4sInfoFields.MODEL_BASIC
 
-        elif adv_data[0] & 0b10001111 == 0b00000011:
+        else:
+            # 0341400B3C00EEF347259400
+            # 055b0b006400f0f296e03665
+            # 055b16006400f0f296e03665
             self.logger.debug("Model PLUS")
             self._device.model = Senso4sInfoFields.MODEL_PLUS
 
@@ -121,11 +124,12 @@ class Senso4sBluetoothDevice:
                     adv_data[0] & 0b00010000 > 0
             )
 
-        else:
-            error_msg = "Invalid model"
-            self.logger.error(error_msg)
-            self._device.error = error_msg
-            return self._device
+        # Intended use - byte 0, last 4 bits
+        intended_use_num = adv_data[0] & 0b00001111
+        intended_use = "Unknown"
+        if intended_use_num < len(Senso4sInfoFields.INTENDED_USE):
+            intended_use = Senso4sInfoFields.INTENDED_USE[intended_use_num]
+        self.logger.debug("Intended use: %s", intended_use)
 
         # 4a. Read Mass from advertising data
         mass_percentage = adv_data[1]
@@ -183,7 +187,7 @@ class Senso4sBluetoothDevice:
             # Last measurement time is setup time plus last history point
             if self._device.sensors[Senso4sDataFields.SETUP_TIME] is not None and self._latest_reading_time is not None:
                 latest_reading_time = self._device.sensors[Senso4sDataFields.SETUP_TIME] + datetime.timedelta(
-                    minutes=(self._latest_reading_time + 1) * 15)
+                    minutes=self._latest_reading_time * 15)
                 self._device.sensors[Senso4sDataFields.LAST_MEASUREMENT] = latest_reading_time
 
         except (BleakError, Exception) as error:
@@ -226,6 +230,7 @@ class Senso4sBluetoothDevice:
             # 0x[FE] - empty batteries (battery replacement needed),
             # 0x[FC] - error during starting a new measuring cycle,
             # 0x[FF] - the device has not been used yet or batteries were replaced.
+            # 0x[FD] - unknown error - seen when total weight was below canister weight
             if mass_percentage == 0xFE:
                 status = Senso4sDataFields.STATUS_BATTERY_EMPTY
                 self.logger.debug(status)
@@ -239,9 +244,9 @@ class Senso4sBluetoothDevice:
                 self.logger.debug(status)
                 self._device.sensors[Senso4sDataFields.STATUS] = status
             else:
-                status = f"{0:02X}".format(mass_percentage)
+                status = hex(mass_percentage)
                 self.logger.debug("Unknown status %s", status)
-                self._device.sensors[Senso4sDataFields.STATUS] = status
+                self._device.sensors[Senso4sDataFields.STATUS] = Senso4sDataFields.STATUS_UNKNOWN
 
         else:
             # If value of this byte is between 0x[00] and 0x[64], then this byte represents a mass value in percentage [%].

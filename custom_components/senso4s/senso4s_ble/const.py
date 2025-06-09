@@ -31,6 +31,7 @@ class Senso4sDataFields():
     STATUS_BATTERY_EMPTY = "battery empty"
     STATUS_ERROR_STARTING = "error starting measurement"
     STATUS_NOT_CONFIGURED = "not configured"
+    STATUS_UNKNOWN = "unknown"
 
     # PLUS model only
     WARNING_MOVEMENT = "warning_movement"
@@ -50,3 +51,5 @@ class Senso4sInfoFields():
     MODEL_NUMBER = "model"
     HARDWARE_REV = "hw_version"
     FIRMWARE_REV = "sw_version"
+
+    INTENDED_USE = ["Unknown", "BBQ", "Camping", "Caravanning", "Heating", "Household"]
