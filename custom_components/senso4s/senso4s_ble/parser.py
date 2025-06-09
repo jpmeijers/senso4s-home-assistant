@@ -34,8 +34,8 @@ class Senso4sBluetoothDevice:
         super().__init__()
         self.logger = logger
         self._device = None
-        self._latest_reading = None
-        self._latest_reading_time = None
+        self._last_history_reading = None
+        self._history_periods = 0
 
     async def update_device_adv(
             self,
@@ -185,9 +185,11 @@ class Senso4sBluetoothDevice:
             await asyncio.gather(*tasks)
 
             # Last measurement time is setup time plus last history point
-            if self._device.sensors[Senso4sDataFields.SETUP_TIME] is not None and self._latest_reading_time is not None:
+            if self._device.sensors[Senso4sDataFields.SETUP_TIME] is not None and self._history_periods is not None:
+                self.logger.debug("Setup time: %s, periods: %d", self._device.sensors[Senso4sDataFields.SETUP_TIME],
+                                  self._history_periods)
                 latest_reading_time = self._device.sensors[Senso4sDataFields.SETUP_TIME] + datetime.timedelta(
-                    minutes=self._latest_reading_time * 15)
+                    minutes=self._history_periods * 15)
                 self._device.sensors[Senso4sDataFields.LAST_MEASUREMENT] = latest_reading_time
 
         except (BleakError, Exception) as error:
@@ -268,6 +270,9 @@ class Senso4sBluetoothDevice:
         characteristic.
         """
 
+        self._history_periods = 0
+        self._last_history_reading = None
+
         try:
             await client.start_notify(
                 Senso4sBleConstants.HISTORY_CHARACTERISTIC_UUID_NOTIFYWRITE,
@@ -288,16 +293,16 @@ class Senso4sBluetoothDevice:
         await client.stop_notify(Senso4sBleConstants.HISTORY_CHARACTERISTIC_UUID_NOTIFYWRITE)
 
         # History is reported oldest to newest. Last value is latest or current reading.
-        if self._latest_reading is not None:
+        if self._last_history_reading is not None:
             self._device.sensors[Senso4sDataFields.MASS_KG] = (
-                    float(self._latest_reading) / 100
+                    float(self._last_history_reading) / 100
             )
         else:
             self.logger.debug("No measurement history received")
             self._device.sensors[Senso4sDataFields.MASS_KG] = None
 
         # Clear buffer for next run
-        self._latest_reading = None
+        self._last_history_reading = None
 
     async def _read_setup_time(self, client):
         value = await client.read_gatt_char(Senso4sBleConstants.SETUPTIME_CHARACTERISTIC_UUID_READ)
@@ -349,5 +354,5 @@ class Senso4sBluetoothDevice:
             # entry[1] => duration in 15m intervals
             # Home Assistant only takes current sensors, so ignore history
             self.logger.debug("  History entry: %04X @ %04X", entry[0], entry[1])
-            self._latest_reading = entry[0]
-            self._latest_reading_time = entry[1]
+            self._last_history_reading = entry[0]
+            self._history_periods = self._history_periods + entry[1]
