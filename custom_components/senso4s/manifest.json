@@ -18,13 +18,17 @@
     }
   ],
   "config_flow": true,
-  "dependencies": ["bluetooth_adapters"],
+  "dependencies": [
+    "bluetooth_adapters"
+  ],
   "documentation": "https://github.com/jpmeijers/senso4s-home-assistant",
   "issue_tracker": "https://github.com/jpmeijers/senso4s-home-assistant/issues",
   "iot_class": "local_polling",
   "loggers": [
     "senso4s_ble"
   ],
-  "requirements": ["sensor-state-data"],
+  "requirements": [
+    "sensor-state-data"
+  ],
   "integration_type": "device"
 }

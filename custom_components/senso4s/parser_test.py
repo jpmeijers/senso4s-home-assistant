@@ -30,16 +30,18 @@ async def scan_for_device():
 if __name__ == "__main__":
     parser = Senso4sBluetoothDevice(_LOGGER)
 
+
     async def test_data_update():
         """Activate scan mode for the Bluetooth interface."""
 
         print(f"Waiting for a Senso4s device")
         device, adv = await scan_for_device()
-        
+
         print(f"Found device\n{device}")
         # Connect and get the data from the sensors.
         polled_device = await parser.update_device_full(device, adv)
         print(f"---- Senso4s Device Data ---- \n{polled_device}")
+
 
     try:
         print("Looking for manufacturer", Senso4sBleConstants.SENSO4S_MANUFACTURER)

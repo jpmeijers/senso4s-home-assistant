@@ -55,7 +55,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
         self._discovered_devices: dict[str, Discovery] = {}
 
     async def _get_device_data(
-        self, discovery_info: BluetoothServiceInfo
+            self, discovery_info: BluetoothServiceInfo
     ) -> Senso4sDeviceData:
         _LOGGER.debug("_get_device_data(%s)", discovery_info.address)
         ble_device = bluetooth.async_ble_device_from_address(
@@ -88,7 +88,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
         return device_data
 
     async def async_step_bluetooth(
-        self, discovery_info: BluetoothServiceInfo
+            self, discovery_info: BluetoothServiceInfo
     ) -> ConfigFlowResult:
         """Handle the bluetooth discovery step."""
         _LOGGER.debug("async_step_bluetooth(%s)", discovery_info.address)
@@ -113,7 +113,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
         return await self.async_step_bluetooth_confirm()
 
     async def async_step_bluetooth_confirm(
-        self, user_input: dict[str, Any] | None = None
+            self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Confirm discovery."""
         _LOGGER.debug(
@@ -131,7 +131,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
+            self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the user step to pick discovered device."""
         _LOGGER.debug("async_step_user(%s)", user_input)
