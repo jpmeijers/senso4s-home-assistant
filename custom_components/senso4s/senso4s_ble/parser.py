@@ -8,10 +8,9 @@ import datetime
 import logging
 import struct
 from typing import Any
-from zoneinfo import ZoneInfo
 
-from bleak import BleakClient, BleakError, BLEDevice
 import bleak_retry_connector
+from bleak import BleakClient, BleakError, BLEDevice
 from habluetooth import BluetoothServiceInfoBleak
 
 import homeassistant.util.dt
@@ -129,7 +128,7 @@ class Senso4sBluetoothDevice:
         intended_use = "Unknown"
         if intended_use_num < len(Senso4sInfoFields.INTENDED_USE):
             intended_use = Senso4sInfoFields.INTENDED_USE[intended_use_num]
-        self.logger.debug("Intended use: %s", intended_use)
+        self._device.sensors[Senso4sDataFields.INTENDED_USE] = intended_use
 
         # 4a. Read Mass from advertising data
         mass_percentage = adv_data[1]

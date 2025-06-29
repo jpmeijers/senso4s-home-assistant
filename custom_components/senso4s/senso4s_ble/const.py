@@ -26,6 +26,7 @@ class Senso4sDataFields():
     CYLINDER_WEIGHT = "cylinder_weight"
     SETUP_TIME = "setup_time"
     LAST_MEASUREMENT = "last_measurement"
+    INTENDED_USE = "intended_use"
 
     STATUS_OK = "ok"
     STATUS_BATTERY_EMPTY = "battery empty"

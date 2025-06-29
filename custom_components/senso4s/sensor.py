@@ -28,7 +28,7 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .const import DOMAIN
-from .senso4s_ble import Senso4sDeviceData, Senso4sDataFields
+from .senso4s_ble import Senso4sDeviceData, Senso4sDataFields, Senso4sInfoFields
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,6 +59,7 @@ SENSOR_DESCRIPTIONS = [
         suggested_display_precision=0,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:propane-tank",
+        # force_update=True,
     ),
     SensorEntityDescription(
         key=Senso4sDataFields.BATTERY,
@@ -152,6 +153,14 @@ SENSOR_DESCRIPTIONS = [
         # state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:calendar-clock",
+    ),
+    SensorEntityDescription(
+        key=Senso4sDataFields.INTENDED_USE,
+        name="Intended Use",
+        device_class=SensorDeviceClass.ENUM,
+        options=Senso4sInfoFields.INTENDED_USE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:fire",
     ),
 ]
 
