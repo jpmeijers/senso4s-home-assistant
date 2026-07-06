@@ -10,8 +10,11 @@ from bleak import BleakClient
 from bleak_retry_connector import establish_connection
 
 from homeassistant.components.bluetooth import (
+    BluetoothScanningMode,
+    BluetoothServiceInfoBleak,
     async_ble_device_from_address,
     async_last_service_info,
+    async_register_callback,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -53,7 +56,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug("Senso4s BLE device is %s", ble_device)
 
         try:
-            # TODO do fast adv updates and slow full updates
             data = await senso4s_device.update_device_full(ble_device, service_info)
         except Exception as err:
             raise UpdateFailed(f"Unable to fetch data: {err}") from err
@@ -65,23 +67,41 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
         if data.error is not None:
-            _LOGGER.debug("Updated returned error: {data.error}")
+            _LOGGER.debug("Updated returned error: %s", data.error)
             raise UpdateFailed(
                 f"Updated returned error: {data.error}"
             )
 
         return data
 
+    def _async_advertisement_callback(
+        service_info: BluetoothServiceInfoBleak,
+        scanning_mode: BluetoothScanningMode,
+    ) -> None:
+        """Handle an advertisement update."""
+        _LOGGER.debug("Advertisement received for %s", service_info.address)
+        data = senso4s_device.update_device_adv_sync(service_info.device, service_info)
+        if data.error is None:
+            coordinator.async_set_updated_data(data)
+
     _LOGGER.debug("Polling interval is set to: %s seconds", UPDATE_INTERVAL_S)
 
-    coordinator = hass.data.setdefault(DOMAIN, {})[entry.entry_id] = (
-        DataUpdateCoordinator(
+    coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=DOMAIN,
+        update_method=_async_update_method,
+        update_interval=timedelta(seconds=UPDATE_INTERVAL_S),
+        always_update=False,
+    )
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+    entry.async_on_unload(
+        async_register_callback(
             hass,
-            _LOGGER,
-            name=DOMAIN,
-            update_method=_async_update_method,
-            update_interval=timedelta(seconds=UPDATE_INTERVAL_S),
-            always_update=False,
+            _async_advertisement_callback,
+            {"address": address, "connectable": True},
+            BluetoothScanningMode.PASSIVE,
         )
     )
 

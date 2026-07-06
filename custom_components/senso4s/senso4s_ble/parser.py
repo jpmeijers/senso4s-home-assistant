@@ -36,19 +36,20 @@ class Senso4sBluetoothDevice:
         self._last_history_reading = None
         self._history_periods = 0
 
-    async def update_device_adv(
+    def update_device_adv_sync(
             self,
             ble_device: BLEDevice,
             service_info: BluetoothServiceInfoBleak,
     ) -> Senso4sDeviceData:
+        """Update device data from advertisement (synchronous)."""
 
-        # Init data device
-        self._device = Senso4sDeviceData()
+        # If we already have a device data object, reuse it
+        if self._device is None:
+            self._device = Senso4sDeviceData()
 
-        self.logger.debug("update_device_adv()")
-        self.logger.debug("BLE device: %s", ble_device)
-        self.logger.debug("Data device: %s", self._device)
-        self.logger.debug("Service info: %s", service_info)
+        self.logger.debug("update_device_adv_sync()")
+        # self.logger.debug("BLE device: %s", ble_device)
+        # self.logger.debug("Service info: %s", service_info)
 
         # If the device advertises a name, use it
         if hasattr(service_info, 'name') and service_info.name is not None:
@@ -64,12 +65,10 @@ class Senso4sBluetoothDevice:
         elif Senso4sBleConstants.NORDIC_MANUFACTURER in service_info.manufacturer_data:
             adv_data = service_info.manufacturer_data[Senso4sBleConstants.NORDIC_MANUFACTURER]
         else:
-            error_msg = "Not Senso4s device"
-            self.logger.error(error_msg)
-            self._device.error = error_msg
+            # Not an error if it's just an irrelevant advertisement
             return self._device
 
-        self.logger.debug("Adv data: %s", binascii.hexlify(adv_data))
+        # self.logger.debug("Adv data: %s", binascii.hexlify(adv_data))
 
         # Add RSSI as a sensor
         self._device.sensors[Senso4sDataFields.RSSI] = service_info.rssi
@@ -102,14 +101,11 @@ class Senso4sBluetoothDevice:
 
         # 3b. Get model and warnings
         if adv_data[0] & 0b11110000 == 0b10000000:
-            self.logger.debug("Model BASIC")
+            # self.logger.debug("Model BASIC")
             self._device.model = Senso4sInfoFields.MODEL_BASIC
 
         else:
-            # 0341400B3C00EEF347259400
-            # 055b0b006400f0f296e03665
-            # 055b16006400f0f296e03665
-            self.logger.debug("Model PLUS")
+            # self.logger.debug("Model PLUS")
             self._device.model = Senso4sInfoFields.MODEL_PLUS
 
             # The warning entities will only appear for the PLUS model
@@ -133,20 +129,28 @@ class Senso4sBluetoothDevice:
         # 4a. Read Mass from advertising data
         mass_percentage = adv_data[1]
         if mass_percentage > 100:
-            self.logger.debug("Mass percentage out of range: 0x%02X", mass_percentage)
+            # self.logger.debug("Mass percentage out of range: 0x%02X", mass_percentage)
             self._device.sensors[Senso4sDataFields.MASS_PERCENT] = None
         else:
             self._device.sensors[Senso4sDataFields.MASS_PERCENT] = mass_percentage
 
         # 4b. Read Prediction from advertising data
         if adv_data[2] == 0xFF and adv_data[3] == 0xFF:
-            self.logger.debug("Prediction is 0xFFFF - unset")
+            # self.logger.debug("Prediction is 0xFFFF - unset")
             self._device.sensors[Senso4sDataFields.PREDICTION] = None
         else:
             prediction_minutes = ((adv_data[3] << 8) + adv_data[2]) * 15
             self._device.sensors[Senso4sDataFields.PREDICTION] = prediction_minutes
 
         return self._device
+
+    async def update_device_adv(
+            self,
+            ble_device: BLEDevice,
+            service_info: BluetoothServiceInfoBleak,
+    ) -> Senso4sDeviceData:
+        """Update device data from advertisement (async)."""
+        return self.update_device_adv_sync(ble_device, service_info)
 
     async def update_device_full(
             self,
@@ -163,6 +167,7 @@ class Senso4sBluetoothDevice:
             return self._device
 
         # 5. Establish Bluetooth connection with Senso4s PLUS/BASIC device and read characteristics
+        client = None
         try:
             # _get_client creates a connection with the device
             self.logger.debug("Connecting to device")
@@ -199,8 +204,9 @@ class Senso4sBluetoothDevice:
             )
             self._device.error = str(error)
         finally:
-            self.logger.debug("Disconnecting client")
-            await client.disconnect()
+            if client is not None:
+                self.logger.debug("Disconnecting client")
+                await client.disconnect()
 
         self.logger.debug("returning device sensors")
         return self._device
@@ -208,20 +214,12 @@ class Senso4sBluetoothDevice:
     async def _read_mass(self, client):
         mass_percentage = None
         try:
-            # NOTE: To read this characteristic, one must first enable the NOTIFY property.
-            await client.start_notify(
-                Senso4sBleConstants.MASS_CHARACTERISTIC_UUID_READ,
-                self.mass_notification_handler,
-            )
-
             value = await client.read_gatt_char(Senso4sBleConstants.MASS_CHARACTERISTIC_UUID_READ)
             self.logger.debug("Mass char bytes: %s", binascii.hexlify(value))
             mass_percentage = value[0]
         except BleakError as err:
-            self.logger.debug("Start notify mass exception: %s", err)
+            self.logger.debug("Read mass exception: %s", err)
             return
-        finally:
-            await client.stop_notify(Senso4sBleConstants.MASS_CHARACTERISTIC_UUID_READ)
 
         if mass_percentage > 100:
             # If any of the values below occur, an error occurred during measurement or during starting a new measuring cycle:
@@ -271,25 +269,33 @@ class Senso4sBluetoothDevice:
 
         self._history_periods = 0
         self._last_history_reading = None
+        self._history_event = asyncio.Event()
 
         try:
             await client.start_notify(
                 Senso4sBleConstants.HISTORY_CHARACTERISTIC_UUID_NOTIFYWRITE,
                 self.history_notification_handler,
             )
+            # Write two zero bytes to char to trigger history dump
+            await client.write_gatt_char(
+                Senso4sBleConstants.HISTORY_CHARACTERISTIC_UUID_NOTIFYWRITE, b"\x00\x00"
+            )
+
+            # Wait up to 5s for historical data notifications
+            try:
+                await asyncio.wait_for(self._history_event.wait(), timeout=5.0)
+            except asyncio.TimeoutError:
+                self.logger.debug("Timeout waiting for history notifications")
+
         except BleakError as err:
-            self.logger.debug("Start notify exception: %s", err)
+            self.logger.debug("History read exception: %s", err)
             return
-
-        # Write two zero bytes to char to trigger history dump
-        await client.write_gatt_char(
-            Senso4sBleConstants.HISTORY_CHARACTERISTIC_UUID_NOTIFYWRITE, b"\x00\x00"
-        )
-
-        # Wait up to 1s for historical data notifications - todo use a timeout on notify receive
-        await asyncio.sleep(1.0)
-
-        await client.stop_notify(Senso4sBleConstants.HISTORY_CHARACTERISTIC_UUID_NOTIFYWRITE)
+        finally:
+            self._history_event = None
+            try:
+                await client.stop_notify(Senso4sBleConstants.HISTORY_CHARACTERISTIC_UUID_NOTIFYWRITE)
+            except BleakError:
+                pass
 
         # History is reported oldest to newest. Last value is latest or current reading.
         if self._last_history_reading is not None:
@@ -351,7 +357,8 @@ class Senso4sBluetoothDevice:
         for entry in entries:
             # entry[0] => mass in dag
             # entry[1] => duration in 15m intervals
-            # Home Assistant only takes current sensors, so ignore history
             self.logger.debug("  History entry: %04X @ %04X", entry[0], entry[1])
             self._last_history_reading = entry[0]
             self._history_periods = self._history_periods + entry[1]
+        if hasattr(self, "_history_event") and self._history_event:
+            self._history_event.set()
