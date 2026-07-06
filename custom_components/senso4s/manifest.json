@@ -1,10 +1,6 @@
 {
   "domain": "senso4s",
   "name": "Senso4s",
-  "version": "0.1.0",
-  "codeowners": [
-    "@jpmeijers"
-  ],
   "bluetooth": [
     {
       "connectable": true,
@@ -17,18 +13,22 @@
       "service_uuid": "00007081-0000-1000-8000-00805f9b34fb"
     }
   ],
+  "codeowners": [
+    "@jpmeijers"
+  ],
   "config_flow": true,
   "dependencies": [
     "bluetooth_adapters"
   ],
   "documentation": "https://github.com/jpmeijers/senso4s-home-assistant",
-  "issue_tracker": "https://github.com/jpmeijers/senso4s-home-assistant/issues",
+  "integration_type": "device",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/jpmeijers/senso4s-home-assistant/issues",
   "loggers": [
     "senso4s_ble"
   ],
   "requirements": [
     "sensor-state-data"
   ],
-  "integration_type": "device"
+  "version": "0.1.0"
 }
