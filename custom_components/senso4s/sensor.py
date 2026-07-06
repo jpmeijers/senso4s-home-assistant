@@ -225,11 +225,8 @@ class Senso4sSensorEntity(
         super().__init__(coordinator)
         self.entity_description = entity_description
 
-        self.entity_id = (
-            f"sensor.{senso4s_device.address.replace("_", "")}_{entity_description.key}"
-        )
         self._attr_unique_id = (
-            f"{senso4s_device.address.replace("_", "")}_{entity_description.key}"
+            f"{senso4s_device.address.replace('_', '')}_{entity_description.key}"
         )
 
         friendly_name = senso4s_device.friendly_name()
