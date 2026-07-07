@@ -66,6 +66,7 @@ class Senso4sBluetoothDevice:
             adv_data = service_info.manufacturer_data[Senso4sBleConstants.NORDIC_MANUFACTURER]
         else:
             # Not an error if it's just an irrelevant advertisement
+            self._device.error = "Not a Senso4s device"
             return self._device
 
         # self.logger.debug("Adv data: %s", binascii.hexlify(adv_data))
@@ -163,8 +164,9 @@ class Senso4sBluetoothDevice:
 
         # 1-4 from advertising data
         await self.update_device_adv(ble_device, service_info)
-        if self._device.error is not None:
-            return self._device
+        # Even if there was an error in advertisement, we still try characteristics
+        # unless it was a fatal error in advertisement parsing.
+        # But update_device_adv_sync only returns error for short data.
 
         # 5. Establish Bluetooth connection with Senso4s PLUS/BASIC device and read characteristics
         client = None
@@ -197,12 +199,17 @@ class Senso4sBluetoothDevice:
                 self._device.sensors[Senso4sDataFields.LAST_MEASUREMENT] = latest_reading_time
 
         except (BleakError, Exception) as error:
-            self.logger.error(
+            self.logger.warning(
                 "Error getting data from device: %s\n%s",
                 ble_device.address,
                 str(error),
             )
-            self._device.error = str(error)
+            # Only set the error if we don't have any sensor data yet
+            if not self._device.sensors:
+                self._device.error = str(error)
+            else:
+                # Clear any previous error if we have sensors
+                self._device.error = None
         finally:
             if client is not None:
                 self.logger.debug("Disconnecting client")

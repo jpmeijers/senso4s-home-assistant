@@ -46,28 +46,42 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         """Get data from Senso4s BLE."""
         _LOGGER.debug("_async_update_method()")
 
-        service_info = async_last_service_info(hass, address, connectable=True)
+        service_info = async_last_service_info(hass, address, connectable=False)
         ble_device = async_ble_device_from_address(hass, address)
         if ble_device is None:
-            raise ServiceNotFound(
-                DOMAIN,
-                f"{address}"
-            )
+            if service_info is not None:
+                ble_device = service_info.device
+            else:
+                raise ServiceNotFound(
+                    DOMAIN,
+                    f"{address}"
+                )
         _LOGGER.debug("Senso4s BLE device is %s", ble_device)
 
         try:
             data = await senso4s_device.update_device_full(ble_device, service_info)
         except Exception as err:
+            # If we already have some data from advertisements, don't fail the update
+            if senso4s_device._device and not senso4s_device._device.error:
+                _LOGGER.warning("Unable to fetch full data (GATT), using advertisement data: %s", err)
+                return senso4s_device._device
             raise UpdateFailed(f"Unable to fetch data: {err}") from err
 
         if data is None:
             _LOGGER.debug("full update returned None")
+            if senso4s_device._device:
+                return senso4s_device._device
             raise UpdateFailed(
                 f"Updated returned None {address}"
             )
 
         if data.error is not None:
             _LOGGER.debug("Updated returned error: %s", data.error)
+            if senso4s_device._device and senso4s_device._device.sensors:
+                _LOGGER.warning("Updated returned error but we have sensor data: %s", data.error)
+                # Clear error so it doesn't stay in the model if we want to keep using old data
+                # Actually, update_device_full sets the error.
+                return senso4s_device._device
             raise UpdateFailed(
                 f"Updated returned error: {data.error}"
             )
@@ -100,7 +114,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         async_register_callback(
             hass,
             _async_advertisement_callback,
-            {"address": address, "connectable": True},
+            {"address": address, "connectable": False},
             BluetoothScanningMode.PASSIVE,
         )
     )

@@ -259,9 +259,10 @@ class Senso4sSensorEntity(
     @property
     def native_value(self) -> StateType:
         """Return the value reported by the sensor."""
+        value = self.coordinator.data.sensors.get(self.entity_description.key)
         _LOGGER.debug(
             "native_value(%s) => %s",
             self.entity_description.key,
-            self.coordinator.data.sensors[self.entity_description.key],
+            value,
         )
-        return self.coordinator.data.sensors[self.entity_description.key]
+        return value

@@ -62,25 +62,21 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
             self.hass, discovery_info.address
         )
         if ble_device is None:
-            _LOGGER.debug("no ble_device in _get_device_data")
-            raise Senso4sDeviceUpdateError("No ble_device")
+            # If it's not in the ble_device cache, we can still use the discovery_info.device
+            _LOGGER.debug("no ble_device in cache, using discovery_info.device")
+            ble_device = discovery_info.device
 
         senso4s = Senso4sBluetoothDevice(_LOGGER)
 
         try:
             device_data = await senso4s.update_device_adv(ble_device, discovery_info)
-        except BleakError as err:
+        except Exception as err:
             _LOGGER.error(
-                "Error connecting to and getting data from %s: %s",
+                "Error getting data from %s: %s",
                 discovery_info.address,
                 err,
             )
             raise Senso4sDeviceUpdateError("Failed getting device data") from err
-        except Exception as err:
-            _LOGGER.error(
-                "Unknown error occurred from %s: %s", discovery_info.address, err
-            )
-            raise err
 
         if device_data is None:
             _LOGGER.error("device update data is none")
@@ -141,14 +137,14 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
             address = user_input[CONF_ADDRESS]
             await self.async_set_unique_id(address, raise_on_progress=False)
             self._abort_if_unique_id_configured()
-            discovery_info = self._discovered_devices[
+            discovery = self._discovered_devices[
                 address
             ]  # get from cached devices from previous call to this function
-            if discovery_info is None:
+            if discovery is None:
                 _LOGGER.error("address not found in discovered device cache")
 
             try:
-                device = await self._get_device_data(discovery_info)
+                device = await self._get_device_data(discovery.discovery_info)
             except Senso4sDeviceUpdateError:
                 return self.async_abort(reason="cannot_connect")
             except Exception:  # pylint: disable=broad-except  # noqa: BLE001
@@ -163,7 +159,7 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
                 "name": name,
             }
 
-            self._discovered_device = discovery_info
+            self._discovered_device = discovery
 
             return self.async_create_entry(title=name, data={})
 
@@ -189,6 +185,11 @@ class Senso4sConfigFlow(ConfigFlow, domain=DOMAIN):
 
             if device.error is not None:
                 # Ignore as this is likely not a Senso4s device
+                continue
+
+            if not device.sensors:
+                # If we didn't get any sensors, it's probably not a Senso4s device
+                # even if it matched the manufacturer ID (could be another product)
                 continue
 
             name = device.friendly_name()
