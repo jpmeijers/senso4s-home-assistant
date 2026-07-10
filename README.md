@@ -1,3 +1,9 @@
+> [!WARNING]
+> This integration has been deprecated in favour of the new Senso4s integration, which is by default available in HACS.
+> When migrating from this one, first remove the Senso4s device, then delete the integration from HACS and restart Home Assistant.
+> Then follow the steps documented at https://github.com/ksanislo/senso4s_ble to install the new integration.
+
+
 # Senso4s Home Assistant integration
 
 ![hacs workflow](https://github.com/jpmeijers/senso4s-home-assistant/actions/workflows/validate.yaml/badge.svg)
@@ -6,9 +12,6 @@ This integration adds support for the [Senso4s PLUS](https://www.senso4s.com/pro
 Senso4s devices use Bluetooth to communicate, so your Home Assistant installation needs to have a [Bluetooth adapter or Bluetooth Proxy available](https://www.home-assistant.io/integrations/bluetooth/).
 Setup of a Senso4s device is done using the [Senso4s Android App](https://play.google.com/store/apps/details?id=com.companyname.Senso4sProject&hl=en_ZA&pli=1) or [Senso4s iOS App](https://apps.apple.com/us/app/senso4s/id1447741983).
 After the setup of a Senso4s device is completed, you can check the remaining gas level, gas level consumption history, estimated running-out-of-gas time, battery status, and other parameters either via the Senso4s app or this Home Assistant integration.
-
-> [!NOTE]  
-> A newer revision of this integration is available in HACS, developed at https://github.com/ksanislo/senso4s_ble
 
 ## Quick Install using HACS
 
