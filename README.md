@@ -8,8 +8,7 @@ Setup of a Senso4s device is done using the [Senso4s Android App](https://play.g
 After the setup of a Senso4s device is completed, you can check the remaining gas level, gas level consumption history, estimated running-out-of-gas time, battery status, and other parameters either via the Senso4s app or this Home Assistant integration.
 
 > [!NOTE]  
-> This integrations connects to the Senso4s device to read out its characteristics.
-> Therefore broadcast-only proxies are not supported.
+> A newer revision of this integration is available in HACS, developed at https://github.com/ksanislo/senso4s_ble
 
 ## Quick Install using HACS
 
